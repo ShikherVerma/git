@@ -24,6 +24,17 @@
 #include "tmp-objdir.h"
 #include "oidset.h"
 
+extern char *program_invocation_name;
+
+static void my_debugger(const char *file, const int line, const char *function)
+{
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "[%d][%ld][%s]\tHIT %s:%d\t%s\n", getpid(), time(NULL), program_invocation_name, file, line, function);
+		fclose(fp);
+	}
+}
+
 static const char * const receive_pack_usage[] = {
 	N_("git receive-pack <git-dir>"),
 	NULL
@@ -93,6 +104,7 @@ static struct tmp_objdir *tmp_objdir;
 
 static enum deny_action parse_deny_action(const char *var, const char *value)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (value) {
 		if (!strcasecmp(value, "ignore"))
 			return DENY_IGNORE;
@@ -110,6 +122,7 @@ static enum deny_action parse_deny_action(const char *var, const char *value)
 
 static int receive_pack_config(const char *var, const char *value, void *cb)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int status = parse_hide_refs_config(var, value, "receive");
 
 	if (status)
@@ -228,6 +241,7 @@ static int receive_pack_config(const char *var, const char *value, void *cb)
 
 static void show_ref(const char *path, const struct object_id *oid)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (sent_capabilities) {
 		packet_write_fmt(1, "%s %s\n", oid_to_hex(oid), path);
 	} else {
@@ -254,6 +268,7 @@ static void show_ref(const char *path, const struct object_id *oid)
 static int show_ref_cb(const char *path_full, const struct object_id *oid,
 		       int flag, void *data)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct oidset *seen = data;
 	const char *path = strip_namespace(path_full);
 
@@ -280,6 +295,7 @@ static void show_one_alternate_ref(const char *refname,
 				   const struct object_id *oid,
 				   void *data)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct oidset *seen = data;
 
 	if (oidset_insert(seen, oid))
@@ -290,6 +306,7 @@ static void show_one_alternate_ref(const char *refname,
 
 static void write_head_info(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	static struct oidset seen = OIDSET_INIT;
 
 	for_each_ref(show_ref_cb, &seen);
@@ -320,6 +337,7 @@ static void rp_warning(const char *err, ...) __attribute__((format (printf, 1, 2
 
 static void report_message(const char *prefix, const char *err, va_list params)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int sz;
 	char msg[4096];
 
@@ -337,6 +355,7 @@ static void report_message(const char *prefix, const char *err, va_list params)
 
 static void rp_warning(const char *err, ...)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	va_list params;
 	va_start(params, err);
 	report_message("warning: ", err, params);
@@ -345,6 +364,7 @@ static void rp_warning(const char *err, ...)
 
 static void rp_error(const char *err, ...)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	va_list params;
 	va_start(params, err);
 	report_message("error: ", err, params);
@@ -353,6 +373,7 @@ static void rp_error(const char *err, ...)
 
 static int copy_to_sideband(int in, int out, void *arg)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	char data[128];
 	int keepalive_active = 0;
 
@@ -420,6 +441,7 @@ static void hmac_sha1(unsigned char *out,
 		      const char *key_in, size_t key_len,
 		      const char *text, size_t text_len)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	unsigned char key[HMAC_BLOCK_SIZE];
 	unsigned char k_ipad[HMAC_BLOCK_SIZE];
 	unsigned char k_opad[HMAC_BLOCK_SIZE];
@@ -457,6 +479,7 @@ static void hmac_sha1(unsigned char *out,
 
 static char *prepare_push_cert_nonce(const char *path, timestamp_t stamp)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct strbuf buf = STRBUF_INIT;
 	unsigned char sha1[20];
 
@@ -477,6 +500,7 @@ static char *prepare_push_cert_nonce(const char *path, timestamp_t stamp)
 static char *find_header(const char *msg, size_t len, const char *key,
 			 const char **next_line)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int key_len = strlen(key);
 	const char *line = msg;
 
@@ -499,6 +523,7 @@ static char *find_header(const char *msg, size_t len, const char *key,
 
 static const char *check_nonce(const char *buf, size_t len)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	char *nonce = find_header(buf, len, "nonce", NULL);
 	timestamp_t stamp, ostamp;
 	char *bohmac, *expect = NULL;
@@ -585,6 +610,7 @@ leave:
  */
 static int check_cert_push_options(const struct string_list *push_options)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *buf = push_cert.buf;
 	int len = push_cert.len;
 
@@ -620,6 +646,7 @@ leave:
 
 static void prepare_push_cert_sha1(struct child_process *proc)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	static int already_done;
 
 	if (!push_cert.len)
@@ -688,6 +715,7 @@ typedef int (*feed_fn)(void *, const char **, size_t *);
 static int run_and_feed_hook(const char *hook_name, feed_fn feed,
 			     struct receive_hook_feed_state *feed_state)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child_process proc = CHILD_PROCESS_INIT;
 	struct async muxer;
 	const char *argv[2];
@@ -756,6 +784,7 @@ static int run_and_feed_hook(const char *hook_name, feed_fn feed,
 
 static int feed_receive_hook(void *state_, const char **bufp, size_t *sizep)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct receive_hook_feed_state *state = state_;
 	struct command *cmd = state->cmd;
 
@@ -781,6 +810,7 @@ static int run_receive_hook(struct command *commands,
 			    int skip_broken,
 			    const struct string_list *push_options)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct receive_hook_feed_state state;
 	int status;
 
@@ -798,6 +828,7 @@ static int run_receive_hook(struct command *commands,
 
 static int run_update_hook(struct command *cmd)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *argv[5];
 	struct child_process proc = CHILD_PROCESS_INIT;
 	int code;
@@ -826,6 +857,7 @@ static int run_update_hook(struct command *cmd)
 
 static int is_ref_checked_out(const char *ref)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (is_bare_repository())
 		return 0;
 
@@ -851,6 +883,7 @@ static char *refuse_unconfigured_deny_msg =
 
 static void refuse_unconfigured_deny(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	rp_error("%s", _(refuse_unconfigured_deny_msg));
 }
 
@@ -866,12 +899,14 @@ static char *refuse_unconfigured_deny_delete_current_msg =
 
 static void refuse_unconfigured_deny_delete_current(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	rp_error("%s", _(refuse_unconfigured_deny_delete_current_msg));
 }
 
 static int command_singleton_iterator(void *cb_data, unsigned char sha1[20]);
 static int update_shallow_ref(struct command *cmd, struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	static struct lock_file shallow_lock;
 	struct oid_array extra = OID_ARRAY_INIT;
 	struct check_connected_options opt = CHECK_CONNECTED_INIT;
@@ -919,6 +954,7 @@ static int update_shallow_ref(struct command *cmd, struct shallow_info *si)
  */
 static int head_has_history(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	unsigned char sha1[20];
 
 	return !get_sha1("HEAD", sha1);
@@ -928,6 +964,7 @@ static const char *push_to_deploy(unsigned char *sha1,
 				  struct argv_array *env,
 				  const char *work_tree)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *update_refresh[] = {
 		"update-index", "-q", "--ignore-submodules", "--refresh", NULL
 	};
@@ -997,6 +1034,7 @@ static const char *push_to_checkout(unsigned char *sha1,
 				    struct argv_array *env,
 				    const char *work_tree)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	argv_array_pushf(env, "GIT_WORK_TREE=%s", absolute_path(work_tree));
 	if (run_hook_le(env->argv, push_to_checkout_hook,
 			sha1_to_hex(sha1), NULL))
@@ -1007,6 +1045,7 @@ static const char *push_to_checkout(unsigned char *sha1,
 
 static const char *update_worktree(unsigned char *sha1)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *retval;
 	const char *work_tree = git_work_tree_cfg ? git_work_tree_cfg : "..";
 	struct argv_array env = ARGV_ARRAY_INIT;
@@ -1027,6 +1066,7 @@ static const char *update_worktree(unsigned char *sha1)
 
 static const char *update(struct command *cmd, struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *name = cmd->ref_name;
 	struct strbuf namespaced_name_buf = STRBUF_INIT;
 	static char *namespaced_name;
@@ -1171,6 +1211,7 @@ static const char *update(struct command *cmd, struct shallow_info *si)
 
 static void run_update_post_hook(struct command *commands)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	struct child_process proc = CHILD_PROCESS_INIT;
 	const char *hook;
@@ -1202,6 +1243,7 @@ static void run_update_post_hook(struct command *commands)
 
 static void check_aliased_update(struct command *cmd, struct string_list *list)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct strbuf buf = STRBUF_INIT;
 	const char *dst_name;
 	struct string_list_item *item;
@@ -1252,6 +1294,7 @@ static void check_aliased_update(struct command *cmd, struct string_list *list)
 
 static void check_aliased_updates(struct command *commands)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	struct string_list ref_list = STRING_LIST_INIT_NODUP;
 
@@ -1272,6 +1315,7 @@ static void check_aliased_updates(struct command *commands)
 
 static int command_singleton_iterator(void *cb_data, unsigned char sha1[20])
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command **cmd_list = cb_data;
 	struct command *cmd = *cmd_list;
 
@@ -1285,6 +1329,7 @@ static int command_singleton_iterator(void *cb_data, unsigned char sha1[20])
 static void set_connectivity_errors(struct command *commands,
 				    struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 
 	for (cmd = commands; cmd; cmd = cmd->next) {
@@ -1311,6 +1356,7 @@ struct iterate_data {
 
 static int iterate_receive_command_list(void *cb_data, unsigned char sha1[20])
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct iterate_data *data = cb_data;
 	struct command **cmd_list = &data->cmds;
 	struct command *cmd = *cmd_list;
@@ -1331,6 +1377,7 @@ static int iterate_receive_command_list(void *cb_data, unsigned char sha1[20])
 
 static void reject_updates_to_hidden(struct command *commands)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct strbuf refname_full = STRBUF_INIT;
 	size_t prefix_len;
 	struct command *cmd;
@@ -1358,12 +1405,14 @@ static void reject_updates_to_hidden(struct command *commands)
 
 static int should_process_cmd(struct command *cmd)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	return !cmd->error_string && !cmd->skip_update;
 }
 
 static void warn_if_skipped_connectivity_check(struct command *commands,
 					       struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	int checked_connectivity = 1;
 
@@ -1381,6 +1430,7 @@ static void warn_if_skipped_connectivity_check(struct command *commands,
 static void execute_commands_non_atomic(struct command *commands,
 					struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	struct strbuf err = STRBUF_INIT;
 
@@ -1412,6 +1462,7 @@ static void execute_commands_non_atomic(struct command *commands,
 static void execute_commands_atomic(struct command *commands,
 					struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	struct strbuf err = STRBUF_INIT;
 	const char *reported_error = "atomic push failure";
@@ -1456,6 +1507,7 @@ static void execute_commands(struct command *commands,
 			     struct shallow_info *si,
 			     const struct string_list *push_options)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct check_connected_options opt = CHECK_CONNECTED_INIT;
 	struct command *cmd;
 	struct object_id oid;
@@ -1554,6 +1606,7 @@ static struct command **queue_command(struct command **tail,
 static void queue_commands_from_cert(struct command **tail,
 				     struct strbuf *push_cert)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *boc, *eoc;
 
 	if (*tail)
@@ -1643,6 +1696,7 @@ static struct command *read_head_info(struct oid_array *shallow)
 
 static void read_push_options(struct string_list *options)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	while (1) {
 		char *line;
 		int len;
@@ -1658,6 +1712,7 @@ static void read_push_options(struct string_list *options)
 
 static const char *parse_pack_header(struct pack_header *hdr)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	switch (read_pack_header(0, hdr)) {
 	case PH_ERROR_EOF:
 		return "eof before pack header was fully read";
@@ -1680,12 +1735,14 @@ static const char *pack_lockfile;
 
 static void push_header_arg(struct argv_array *args, struct pack_header *hdr)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	argv_array_pushf(args, "--pack_header=%"PRIu32",%"PRIu32,
 			ntohl(hdr->hdr_version), ntohl(hdr->hdr_entries));
 }
 
 static const char *unpack(int err_fd, struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct pack_header hdr;
 	const char *hdr_err;
 	int status;
@@ -1784,6 +1841,7 @@ static const char *unpack(int err_fd, struct shallow_info *si)
 
 static const char *unpack_with_sideband(struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct async muxer;
 	const char *ret;
 
@@ -1806,6 +1864,7 @@ static const char *unpack_with_sideband(struct shallow_info *si)
 static void prepare_shallow_update(struct command *commands,
 				   struct shallow_info *si)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int i, j, k, bitmap_size = (si->ref->nr + 31) / 32;
 
 	ALLOC_ARRAY(si->used_shallow, si->shallow->nr);
@@ -1853,6 +1912,7 @@ static void update_shallow_info(struct command *commands,
 				struct shallow_info *si,
 				struct oid_array *ref)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	int *ref_status;
 	remove_nonexistent_theirs_shallow(si);
@@ -1889,6 +1949,7 @@ static void update_shallow_info(struct command *commands,
 
 static void report(struct command *commands, const char *unpack_status)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	struct strbuf buf = STRBUF_INIT;
 
@@ -1913,6 +1974,7 @@ static void report(struct command *commands, const char *unpack_status)
 
 static int delete_only(struct command *commands)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct command *cmd;
 	for (cmd = commands; cmd; cmd = cmd->next) {
 		if (!is_null_oid(&cmd->new_oid))
@@ -1923,6 +1985,7 @@ static int delete_only(struct command *commands)
 
 int cmd_receive_pack(int argc, const char **argv, const char *prefix)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int advertise_refs = 0;
 	struct command *commands;
 	struct oid_array shallow = OID_ARRAY_INIT;

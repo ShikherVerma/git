@@ -2,6 +2,17 @@
 #include "exec_cmd.h"
 #include "attr.h"
 
+extern char *program_invocation_name;
+
+static void my_debugger(const char *file, const int line, const char *function)
+{
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "[%d][%ld][%s]\tHIT %s:%d\t%s\n", getpid(), time(NULL), program_invocation_name, file, line, function);
+		fclose(fp);
+	}
+}
+
 /*
  * Many parts of Git have subprograms communicate via pipe, expect the
  * upstream of a pipe to die with SIGPIPE when the downstream of a
@@ -15,6 +26,7 @@
  */
 static void restore_sigpipe_to_default(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	sigset_t unblock;
 
 	sigemptyset(&unblock);
@@ -25,6 +37,7 @@ static void restore_sigpipe_to_default(void)
 
 int main(int argc, const char **argv)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	/*
 	 * Always open file descriptors 0/1/2 to avoid clobbering files
 	 * in die().  It also avoids messing up when the pipes are dup'ed

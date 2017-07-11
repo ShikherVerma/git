@@ -60,14 +60,27 @@ struct hostinfo {
 
 static void lookup_hostname(struct hostinfo *hi);
 
+extern char *program_invocation_name;
+
+static void my_debugger(const char *file, const int line, const char *function)
+{
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "[%d][%ld][%s]\tHIT %s:%d\t%s\n", getpid(), time(NULL), program_invocation_name, file, line, function);
+		fclose(fp);
+	}
+}
+
 static const char *get_canon_hostname(struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	lookup_hostname(hi);
 	return hi->canon_hostname.buf;
 }
 
 static const char *get_ip_address(struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	lookup_hostname(hi);
 	return hi->ip_address.buf;
 }
@@ -94,6 +107,7 @@ static void logreport(int priority, const char *err, va_list params)
 __attribute__((format (printf, 1, 2)))
 static void logerror(const char *err, ...)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	va_list params;
 	va_start(params, err);
 	logreport(LOG_ERR, err, params);
@@ -103,6 +117,7 @@ static void logerror(const char *err, ...)
 __attribute__((format (printf, 1, 2)))
 static void loginfo(const char *err, ...)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	va_list params;
 	if (!verbose)
 		return;
@@ -113,6 +128,7 @@ static void loginfo(const char *err, ...)
 
 static void NORETURN daemon_die(const char *err, va_list params)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	logreport(LOG_ERR, err, params);
 	exit(1);
 }
@@ -124,6 +140,7 @@ struct expand_path_context {
 
 static size_t expand_path(struct strbuf *sb, const char *placeholder, void *ctx)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct expand_path_context *context = ctx;
 	struct hostinfo *hi = context->hostinfo;
 
@@ -155,6 +172,7 @@ static size_t expand_path(struct strbuf *sb, const char *placeholder, void *ctx)
 
 static const char *path_ok(const char *directory, struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	static char rpath[PATH_MAX];
 	static char interp_path[PATH_MAX];
 	size_t rlen;
@@ -293,6 +311,7 @@ struct daemon_service {
 
 static int daemon_error(const char *dir, const char *msg)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (!informative_errors)
 		msg = "access denied or repository not exported";
 	packet_write_fmt(1, "ERR %s: %s", msg, dir);
@@ -304,6 +323,7 @@ static const char *access_hook;
 static int run_access_hook(struct daemon_service *service, const char *dir,
 			   const char *path, struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child_process child = CHILD_PROCESS_INIT;
 	struct strbuf buf = STRBUF_INIT;
 	const char *argv[8];
@@ -365,6 +385,7 @@ error_return:
 static int run_service(const char *dir, struct daemon_service *service,
 		       struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const char *path;
 	int enabled = service->enabled;
 	struct strbuf var = STRBUF_INIT;
@@ -427,6 +448,7 @@ static int run_service(const char *dir, struct daemon_service *service,
 
 static void copy_to_log(int fd)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct strbuf line = STRBUF_INIT;
 	FILE *fp;
 
@@ -448,6 +470,7 @@ static void copy_to_log(int fd)
 
 static int run_service_command(struct child_process *cld)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	argv_array_push(&cld->args, ".");
 	cld->git_cmd = 1;
 	cld->err = -1;
@@ -464,6 +487,7 @@ static int run_service_command(struct child_process *cld)
 
 static int upload_pack(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child_process cld = CHILD_PROCESS_INIT;
 	argv_array_pushl(&cld.args, "upload-pack", "--strict", NULL);
 	argv_array_pushf(&cld.args, "--timeout=%u", timeout);
@@ -472,6 +496,7 @@ static int upload_pack(void)
 
 static int upload_archive(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child_process cld = CHILD_PROCESS_INIT;
 	argv_array_push(&cld.args, "upload-archive");
 	return run_service_command(&cld);
@@ -479,6 +504,7 @@ static int upload_archive(void)
 
 static int receive_pack(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child_process cld = CHILD_PROCESS_INIT;
 	argv_array_push(&cld.args, "receive-pack");
 	return run_service_command(&cld);
@@ -492,6 +518,7 @@ static struct daemon_service daemon_service[] = {
 
 static void enable_service(const char *name, int ena)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int i;
 	for (i = 0; i < ARRAY_SIZE(daemon_service); i++) {
 		if (!strcmp(daemon_service[i].name, name)) {
@@ -504,6 +531,7 @@ static void enable_service(const char *name, int ena)
 
 static void make_service_overridable(const char *name, int ena)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int i;
 	for (i = 0; i < ARRAY_SIZE(daemon_service); i++) {
 		if (!strcmp(daemon_service[i].name, name)) {
@@ -517,6 +545,7 @@ static void make_service_overridable(const char *name, int ena)
 static void parse_host_and_port(char *hostport, char **host,
 	char **port)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (*hostport == '[') {
 		char *end;
 
@@ -549,6 +578,7 @@ static void parse_host_and_port(char *hostport, char **host,
  */
 static void sanitize_client(struct strbuf *out, const char *in)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	for (; *in; in++) {
 		if (*in == '/')
 			continue;
@@ -567,6 +597,7 @@ static void sanitize_client(struct strbuf *out, const char *in)
  */
 static void canonicalize_client(struct strbuf *out, const char *in)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	sanitize_client(out, in);
 	strbuf_tolower(out);
 }
@@ -576,6 +607,7 @@ static void canonicalize_client(struct strbuf *out, const char *in)
  */
 static void parse_host_arg(struct hostinfo *hi, char *extra_args, int buflen)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	char *val;
 	int vallen;
 	char *end = extra_args + buflen;
@@ -609,6 +641,7 @@ static void parse_host_arg(struct hostinfo *hi, char *extra_args, int buflen)
  */
 static void lookup_hostname(struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (!hi->hostname_lookup_done && hi->hostname.len) {
 #ifndef NO_IPV6
 		struct addrinfo hints;
@@ -663,6 +696,7 @@ static void lookup_hostname(struct hostinfo *hi)
 
 static void hostinfo_init(struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	memset(hi, 0, sizeof(*hi));
 	strbuf_init(&hi->hostname, 0);
 	strbuf_init(&hi->canon_hostname, 0);
@@ -672,6 +706,7 @@ static void hostinfo_init(struct hostinfo *hi)
 
 static void hostinfo_clear(struct hostinfo *hi)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	strbuf_release(&hi->hostname);
 	strbuf_release(&hi->canon_hostname);
 	strbuf_release(&hi->ip_address);
@@ -680,6 +715,7 @@ static void hostinfo_clear(struct hostinfo *hi)
 
 static void set_keep_alive(int sockfd)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int ka = 1;
 
 	if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &ka, sizeof(ka)) < 0) {
@@ -691,6 +727,7 @@ static void set_keep_alive(int sockfd)
 
 static int execute(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	char *line = packet_buffer;
 	int pktlen, len, i;
 	char *addr = getenv("REMOTE_ADDR"), *port = getenv("REMOTE_PORT");
@@ -744,6 +781,7 @@ static int execute(void)
 static int addrcmp(const struct sockaddr_storage *s1,
     const struct sockaddr_storage *s2)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const struct sockaddr *sa1 = (const struct sockaddr*) s1;
 	const struct sockaddr *sa2 = (const struct sockaddr*) s2;
 
@@ -774,6 +812,7 @@ static struct child {
 
 static void add_child(struct child_process *cld, struct sockaddr *addr, socklen_t addrlen)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child *newborn, **cradle;
 
 	newborn = xcalloc(1, sizeof(*newborn));
@@ -795,6 +834,7 @@ static void add_child(struct child_process *cld, struct sockaddr *addr, socklen_
  */
 static void kill_some_child(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	const struct child *blanket, *next;
 
 	if (!(blanket = firstborn))
@@ -809,6 +849,7 @@ static void kill_some_child(void)
 
 static void check_dead_children(void)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int status;
 	pid_t pid;
 
@@ -832,6 +873,7 @@ static void check_dead_children(void)
 static struct argv_array cld_argv = ARGV_ARRAY_INIT;
 static void handle(int incoming, struct sockaddr *addr, socklen_t addrlen)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct child_process cld = CHILD_PROCESS_INIT;
 
 	if (max_connections && live_children >= max_connections) {
@@ -875,6 +917,7 @@ static void handle(int incoming, struct sockaddr *addr, socklen_t addrlen)
 
 static void child_handler(int signo)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	/*
 	 * Otherwise empty handler because systemcalls will get interrupted
 	 * upon signal receipt
@@ -885,6 +928,7 @@ static void child_handler(int signo)
 
 static int set_reuse_addr(int sockfd)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int on = 1;
 
 	if (!reuseaddr)
@@ -901,6 +945,7 @@ struct socketlist {
 
 static const char *ip2str(int family, struct sockaddr *sin, socklen_t len)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 #ifdef NO_IPV6
 	static char ip[INET_ADDRSTRLEN];
 #else
@@ -926,6 +971,7 @@ static const char *ip2str(int family, struct sockaddr *sin, socklen_t len)
 
 static int setup_named_sock(char *listen_addr, int listen_port, struct socketlist *socklist)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int socknum = 0;
 	char pbuf[NI_MAXSERV];
 	struct addrinfo hints, *ai0, *ai;
@@ -1007,6 +1053,7 @@ static int setup_named_sock(char *listen_addr, int listen_port, struct socketlis
 
 static int setup_named_sock(char *listen_addr, int listen_port, struct socketlist *socklist)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct sockaddr_in sin;
 	int sockfd;
 	long flags;
@@ -1064,6 +1111,7 @@ static int setup_named_sock(char *listen_addr, int listen_port, struct socketlis
 
 static void socksetup(struct string_list *listen_addr, int listen_port, struct socketlist *socklist)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (!listen_addr->nr)
 		setup_named_sock(NULL, listen_port, socklist);
 	else {
@@ -1081,6 +1129,7 @@ static void socksetup(struct string_list *listen_addr, int listen_port, struct s
 
 static int service_loop(struct socketlist *socklist)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct pollfd *pfd;
 	int i;
 
@@ -1140,6 +1189,7 @@ struct credentials;
 
 static void drop_privileges(struct credentials *cred)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	/* nothing */
 }
 
@@ -1158,6 +1208,7 @@ struct credentials {
 
 static void drop_privileges(struct credentials *cred)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	if (cred && (initgroups(cred->pass->pw_name, cred->gid) ||
 	    setgid (cred->gid) || setuid(cred->pass->pw_uid)))
 		die("cannot drop privileges");
@@ -1189,6 +1240,7 @@ static struct credentials *prepare_credentials(const char *user_name,
 static int serve(struct string_list *listen_addr, int listen_port,
     struct credentials *cred)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	struct socketlist socklist = { NULL, 0, 0 };
 
 	socksetup(listen_addr, listen_port, &socklist);
@@ -1205,6 +1257,7 @@ static int serve(struct string_list *listen_addr, int listen_port,
 
 int cmd_main(int argc, const char **argv)
 {
+	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	int listen_port = 0;
 	struct string_list listen_addr = STRING_LIST_INIT_NODUP;
 	int serve_mode = 0, inetd_mode = 0;

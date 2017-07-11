@@ -3,12 +3,27 @@
 #include "attr.h"
 
 extern char *program_invocation_name;
-
+static const char *get_color(long int pid)
+{
+	switch(pid % 10)
+	{
+		case 1: return "\x1b[32m";
+		case 2: return "\x1b[33m";
+		case 3: return "\x1b[34m";
+		case 4: return "\x1b[35m";
+		case 5: return "\x1b[36m";
+		case 6: return "\x1b[37m";
+		case 7: return "\x1b[44m";
+		case 8: return "\x1b[45m";
+		case 9: return "\x1b[46m";
+	}
+	return "\x1b[41m";
+}
 static void my_debugger(const char *file, const int line, const char *function)
 {
 	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
 	if (fp != NULL) {
-		fprintf(fp, "[%d][%ld][%s]\tHIT %s:%d\t%s\n", getpid(), time(NULL), program_invocation_name, file, line, function);
+		fprintf(fp, "%s[%d][%ld][%s]\tHIT %s:%d\t%s\x1b[0m\n", get_color(getpid()), getpid(), time(NULL), program_invocation_name, file, line, function);
 		fclose(fp);
 	}
 }

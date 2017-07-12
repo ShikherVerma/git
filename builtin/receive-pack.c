@@ -625,7 +625,14 @@ leave:
  */
 static int check_cert_push_options(const struct string_list *push_options)
 {
-	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "%s[%d][%ld][%s]\tHIT %s:%d\t%s\n", get_color(getpid()), getpid(), time(NULL), program_invocation_name, __FILE__,__LINE__,__PRETTY_FUNCTION__);
+		for (int i = 0; i < push_options->nr; i++)
+			fprintf(fp, "%s:%p\n", push_options->items[i].string, push_options->items[i].util);
+		fprintf(fp, "\x1b[0m\n");
+		fclose(fp);
+	}
 	const char *buf = push_cert.buf;
 	int len = push_cert.len;
 
@@ -2000,7 +2007,18 @@ static int delete_only(struct command *commands)
 
 int cmd_receive_pack(int argc, const char **argv, const char *prefix)
 {
-	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "%s[%d][%ld][%s]\tHIT %s:%d\t%s\t", get_color(getpid()), getpid(), time(NULL), program_invocation_name, __FILE__,__LINE__,__PRETTY_FUNCTION__);
+		for (int i = 0; i < argc; i++)
+			fprintf(fp, "%s ", argv[i]);
+		char cwd[1024];
+		getcwd(cwd, sizeof(cwd));
+		fprintf(fp, "\npwd : %s", cwd);
+		fprintf(fp, "\nprefix : %s", prefix);
+		fprintf(fp, "\x1b[0m\n");
+		fclose(fp);
+	}
 	int advertise_refs = 0;
 	struct command *commands;
 	struct oid_array shallow = OID_ARRAY_INIT;

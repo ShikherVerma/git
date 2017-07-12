@@ -19,14 +19,6 @@ static const char *get_color(long int pid)
 	}
 	return "\x1b[41m";
 }
-static void my_debugger(const char *file, const int line, const char *function)
-{
-	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
-	if (fp != NULL) {
-		fprintf(fp, "%s[%d][%ld][%s]\tHIT %s:%d\t%s\x1b[0m\n", get_color(getpid()), getpid(), time(NULL), program_invocation_name, file, line, function);
-		fclose(fp);
-	}
-}
 
 /*
  * Many parts of Git have subprograms communicate via pipe, expect the
@@ -41,7 +33,6 @@ static void my_debugger(const char *file, const int line, const char *function)
  */
 static void restore_sigpipe_to_default(void)
 {
-	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
 	sigset_t unblock;
 
 	sigemptyset(&unblock);
@@ -52,7 +43,14 @@ static void restore_sigpipe_to_default(void)
 
 int main(int argc, const char **argv)
 {
-	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "\n%s[%d][%ld][%s]\tHIT %s:%d\t%s\t", get_color(getpid()), getpid(), time(NULL), program_invocation_name, __FILE__,__LINE__,__PRETTY_FUNCTION__);
+		for (int i = 0; i < argc; i++)
+			fprintf(fp, "%s ", argv[i]);
+		fprintf(fp, "\x1b[0m\n");
+		fclose(fp);
+	}
 	/*
 	 * Always open file descriptors 0/1/2 to avoid clobbering files
 	 * in die().  It also avoids messing up when the pipes are dup'ed

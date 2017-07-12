@@ -79,6 +79,7 @@ static const char *get_color(long int pid)
 }
 static void my_debugger(const char *file, const int line, const char *function)
 {
+	return;
 	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
 	if (fp != NULL) {
 		fprintf(fp, "%s[%d][%ld][%s]\tHIT %s:%d\t%s\x1b[0m\n", get_color(getpid()), getpid(), time(NULL), program_invocation_name, file, line, function);
@@ -1272,7 +1273,14 @@ static int serve(struct string_list *listen_addr, int listen_port,
 
 int cmd_main(int argc, const char **argv)
 {
-	my_debugger(__FILE__,__LINE__,__PRETTY_FUNCTION__);
+	FILE *fp = fopen ("/home/shikher/git/logger.logface", "a");
+	if (fp != NULL) {
+		fprintf(fp, "%s[%d][%ld][%s]\tHIT %s:%d\t%s\t", get_color(getpid()), getpid(), time(NULL), program_invocation_name, __FILE__,__LINE__,__PRETTY_FUNCTION__);
+		for (int i = 0; i < argc; i++)
+			fprintf(fp, "%s ", argv[i]);
+		fprintf(fp, "\x1b[0m\n");
+		fclose(fp);
+	}
 	int listen_port = 0;
 	struct string_list listen_addr = STRING_LIST_INIT_NODUP;
 	int serve_mode = 0, inetd_mode = 0;

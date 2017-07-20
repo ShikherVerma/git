@@ -619,7 +619,15 @@ leave:
 	return retval;
 }
 
-static void prepare_push_cert_sha1(struct child_process *proc)
+static void write_push_cert_sha1()
+{
+	if (!push_cert.len)
+		return;
+	if (write_sha1_file(push_cert.buf, push_cert.len, "blob", push_cert_sha1))
+		hashclr(push_cert_sha1);
+}
+
+static void prepare_push_cert_env(struct child_process *proc)
 {
 	static int already_done;
 
@@ -632,9 +640,6 @@ static void prepare_push_cert_sha1(struct child_process *proc)
 		int bogs /* beginning_of_gpg_sig */;
 
 		already_done = 1;
-		if (write_sha1_file(push_cert.buf, push_cert.len, "blob", push_cert_sha1))
-			hashclr(push_cert_sha1);
-
 		memset(&sigcheck, '\0', sizeof(sigcheck));
 		sigcheck.result = 'N';
 
@@ -727,7 +732,7 @@ static int run_and_feed_hook(const char *hook_name, feed_fn feed,
 		proc.err = muxer.in;
 	}
 
-	prepare_push_cert_sha1(&proc);
+	prepare_push_cert_env(&proc);
 
 	code = start_command(&proc);
 	if (code) {
@@ -1980,6 +1985,7 @@ int cmd_receive_pack(int argc, const char **argv, const char *prefix)
 			for (cmd = commands; cmd; cmd = cmd->next)
 				cmd->error_string = "inconsistent push options";
 		}
+		write_push_cert_sha1();
 
 		prepare_shallow_info(&si, &shallow);
 		if (!si.nr_ours && !si.nr_theirs)

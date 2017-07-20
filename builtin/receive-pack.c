@@ -1530,6 +1530,16 @@ static void execute_commands(struct command *commands,
 
 	if (shallow_update)
 		warn_if_skipped_connectivity_check(commands, si);
+
+	if (push_cert.len) {
+		for (struct command *cmd = commands; cmd; cmd = cmd->next)
+			if (cmd->error_string)
+				return;
+		struct strbuf buf = STRBUF_INIT;
+		strbuf_addstr(&buf, sha1_to_hex(push_cert_sha1));
+		strbuf_addch(&buf, '\n');
+		write_file_buf(git_path_push_cert(), buf.buf, buf.len);
+	}
 }
 
 static struct command **queue_command(struct command **tail,

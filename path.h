@@ -78,5 +78,6 @@ const char *git_path_merge_mode(void);
 const char *git_path_merge_head(void);
 const char *git_path_fetch_head(void);
 const char *git_path_shallow(void);
+const char *git_path_push_cert(void);
 
 #endif /* PATH_H */

@@ -1,5 +1,5 @@
 /*
- * Builtin "git commit-commit"
+ * Builtin "git verify-commit"
  *
  * Copyright (c) 2014 Michael J Gruber <git@drmicha.warpmail.net>
  *

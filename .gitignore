@@ -167,6 +167,7 @@
 /git-upload-archive
 /git-upload-pack
 /git-var
+/git-verify-push-certs
 /git-verify-commit
 /git-verify-pack
 /git-verify-tag
